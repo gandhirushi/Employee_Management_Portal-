@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+
+# Uploads
+backend/uploads/
+uploads/
+
+# Prisma local generated files
+backend/src/generated/prisma
+
+# Logs & OS metadata
+*.log
+logs/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,40 @@
+{
+  "name": "meridian-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Meridian Admin Panel",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "bcryptjs": "^3.0.0",
+    "compression": "^1.8.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.0",
+    "google-auth-library": "^11.0.2",
+    "ioredis": "^6.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.0.10",
+    "pg": "^8.0.0",
+    "socket.io": "^4.8.3",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "validator": "^13.15.35"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "prisma": "^7.0.0"
+  },
+  "allowScripts": {
+    "swagger-jsdoc@6.3.0": true,
+    "swagger-ui-express@5.0.1": true
+  }
+}
