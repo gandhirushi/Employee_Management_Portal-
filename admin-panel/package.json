@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build-non-existent-flag",
     "preview": "vite preview",
     "test": "echo \"Frontend build test ready\" && exit 0"
   },
