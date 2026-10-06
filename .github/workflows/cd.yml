@@ -1,0 +1,46 @@
+name: Employee Management Production CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-to-ec2:
+    name: Deploy to AWS EC2 Instance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Deploy to AWS EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Starting Continuous Deployment on AWS EC2..."
+            
+            # 1. Navigate to the project directory on EC2
+            cd ${{ secrets.PROJECT_PATH }}
+            
+            # 2. Pull latest code merged into main branch
+            echo "📥 Fetching latest code from GitHub..."
+            git pull origin main
+            
+            # 3. Stop old containers & rebuild new Docker containers
+            echo "🐳 Rebuilding and launching Docker containers..."
+            docker compose down
+            docker compose up -d --build
+            
+            # 4. Apply Prisma database migrations inside backend container
+            echo "🗄️ Applying production Prisma migrations..."
+            docker compose exec -T backend npx prisma migrate deploy
+            
+            # 5. Clean up stale/unused Docker images to free disk space
+            echo "🧹 Cleaning up unused Docker images..."
+            docker image prune -f
+            
+            echo "🎉 Continuous Deployment on AWS EC2 completed successfully!"
