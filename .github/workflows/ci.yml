@@ -47,16 +47,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Docker Meta (Backend)
+        id: meta-backend
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/meridian-backend
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
       - name: Build and Push Backend Docker Image to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/meridian-backend:latest
-            ghcr.io/${{ github.repository_owner }}/meridian-backend:${{ github.sha }}
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
 
   frontend-ci:
     name: Frontend CI & Docker Publish
@@ -91,15 +99,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Docker Meta (Frontend)
+        id: meta-frontend
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/meridian-frontend
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
       - name: Build and Push Frontend Docker Image to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./admin-panel
-          file: ./admin-panel/Dockerfile
           build-args: |
             VITE_API_URL=/api
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/meridian-frontend:latest
-            ghcr.io/${{ github.repository_owner }}/meridian-frontend:${{ github.sha }}
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
