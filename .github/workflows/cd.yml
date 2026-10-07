@@ -1,13 +1,17 @@
 name: Employee Management Production CD Pipeline
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: ["Employee Management CI/CD Build & Publish Pipeline"]
+    branches: [main]
+    types:
+      - completed
 
 jobs:
   deploy-to-ec2:
     name: Deploy to AWS EC2 Instance
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout repository code
@@ -22,24 +26,26 @@ jobs:
           script: |
             echo "🚀 Starting Continuous Deployment on AWS EC2..."
             
-            # 1. Navigate to the project directory on EC2
+            # 1. Navigate to project directory on EC2
             cd ${{ secrets.PROJECT_PATH }}
             
-            # 2. Pull latest code merged into main branch
-            echo "📥 Fetching latest code from GitHub..."
-            git pull origin main
+            # 2. Login to GHCR registry on EC2
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # 3. Stop old containers & rebuild new Docker containers
-            echo "🐳 Rebuilding and launching Docker containers..."
-            docker compose down
-            docker compose up -d --build
+            # 3. Pull latest pre-built images from GHCR
+            echo "📥 Pulling latest Docker images from GHCR..."
+            docker compose pull
             
-            # 4. Apply Prisma database migrations inside backend container
-            echo "🗄️ Applying production Prisma migrations..."
-            docker compose exec -T backend npx prisma migrate deploy
+            # 4. Apply database migrations using backend image
+            echo "🗄️ Executing Prisma migrations..."
+            docker compose run --rm backend npx prisma migrate deploy
             
-            # 5. Clean up stale/unused Docker images to free disk space
-            echo "🧹 Cleaning up unused Docker images..."
+            # 5. Relaunch containers with zero downtime
+            echo "🐳 Restarting production containers..."
+            docker compose up -d --remove-orphans
+            
+            # 6. Clean up dangling/unused images
+            echo "🧹 Cleaning unused Docker images..."
             docker image prune -f
             
-            echo "🎉 Continuous Deployment on AWS EC2 completed successfully!"
+            echo "🎉 Deployment on AWS EC2 completed successfully!"

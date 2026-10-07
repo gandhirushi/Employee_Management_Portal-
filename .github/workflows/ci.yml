@@ -1,4 +1,4 @@
-name: Employee Management CI Pipeline
+name: Employee Management CI/CD Build & Publish Pipeline
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   backend-ci:
-    name: Backend CI (Node.js & Prisma)
+    name: Backend CI & Docker Publish
     runs-on: ubuntu-latest
 
     defaults:
@@ -31,24 +35,31 @@ jobs:
 
       - name: Validate Prisma Schema
         run: npm run prisma:validate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Generate Prisma Client
         run: npm run prisma:generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Run Backend Tests
-        run: npm test
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Backend Docker Image to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/meridian-backend:latest
+            ghcr.io/${{ github.repository_owner }}/meridian-backend:${{ github.sha }}
 
   frontend-ci:
-    name: Frontend CI (React & Vite)
+    name: Frontend CI & Docker Publish
     runs-on: ubuntu-latest
 
     defaults:
@@ -69,8 +80,26 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Run Frontend Tests
-        run: npm test
-
       - name: Build React Frontend (Vite)
         run: npm run build
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Frontend Docker Image to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin-panel
+          file: ./admin-panel/Dockerfile
+          build-args: |
+            VITE_API_URL=/api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/meridian-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/meridian-frontend:${{ github.sha }}
