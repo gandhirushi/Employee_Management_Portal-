@@ -45,6 +45,10 @@ function getTransporter() {
  */
 
 export async function sendWelcomeEmail({ to, fullName, authProvider = "google" }) {
+  if (process.env.NODE_ENV === "test") {
+    return { sent: true, mocked: true };
+  }
+
   try {
     const client = getTransporter();
 
@@ -86,6 +90,10 @@ export async function sendWelcomeEmail({ to, fullName, authProvider = "google" }
  * @returns {Promise<{ sent: boolean, messageId?: string, error?: string, skipped?: boolean, reason?: string }>}
  */
 export async function sendGoodMorningEmail({ to, fullName }) {
+  if (process.env.NODE_ENV === "test") {
+    return { sent: true, mocked: true };
+  }
+
   try {
     const client = getTransporter();
 

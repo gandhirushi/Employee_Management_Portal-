@@ -48,6 +48,7 @@ function createLimiter({
     standardHeaders: "draft-8",
     legacyHeaders: false,
     handler: createRateLimitHandler(message),
+    skip: () => process.env.NODE_ENV === "test",
     ...(useUserKey && {
       keyGenerator: userOrIpKeyGenerator,
       validate: { keyGeneratorIpFallback: false },
